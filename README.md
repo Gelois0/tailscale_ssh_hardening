@@ -2,7 +2,6 @@
 
 > A practical guide for building a private mesh network with Tailscale and securing SSH access with key-based authentication, firewall rules, Fail2ban, and optional port knocking.
 
-**Technical review date:** 2026-05-26  
 **Recommended level:** technical beginner / intermediate  
 **Target systems:** Linux, Windows, macOS, Android, and iOS
 
