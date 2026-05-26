@@ -1,4 +1,4 @@
-# Guía profesional: Tailscale + SSH seguro
+# Acceso remoto seguro con Tailscale y hardening SSH
 
 > Instalación, configuración y operación de una red privada con Tailscale, reforzando el acceso SSH con llaves, firewall, Fail2ban y port knocking cuando aplique.
 
