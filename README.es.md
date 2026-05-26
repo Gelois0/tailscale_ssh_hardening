@@ -909,14 +909,4 @@ sudo journalctl -u fail2ban -n 100 --no-pager
 
 ---
 
-## Nota editorial para GitHub y HackMD
 
-Esta guía usa títulos jerárquicos, bloques de código, advertencias y checklist en formato Markdown estándar.
-
-Para HackMD puedes añadir al inicio:
-
-```markdown
-[TOC]
-```
-
-Para GitHub es preferible mantener el índice manual incluido en este documento.
