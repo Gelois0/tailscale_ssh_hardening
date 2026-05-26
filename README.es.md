@@ -2,7 +2,7 @@
 
 > Instalación, configuración y operación de una red privada con Tailscale, reforzando el acceso SSH con llaves, firewall, Fail2ban y port knocking cuando aplique.
 
-**Última revisión técnica:** 2026-05-26  
+
 **Nivel recomendado:** principiante técnico / intermedio  
 **Sistemas objetivo:** Linux, Windows, macOS, Android e iOS
 
