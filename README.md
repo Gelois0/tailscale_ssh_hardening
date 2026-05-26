@@ -940,15 +940,3 @@ sudo journalctl -u fail2ban -n 100 --no-pager
 - [Ubuntu manpage: knockd](https://manpages.ubuntu.com/manpages/focal/man1/knockd.1.html)
 
 ---
-
-## Editorial Note for GitHub and HackMD
-
-This document uses standard Markdown with hierarchical headings, code blocks, callouts, and a manual table of contents.
-
-For HackMD, you can add this near the top if you want automatic navigation:
-
-```markdown
-[TOC]
-```
-
-For GitHub, the manual table of contents included in this document is usually cleaner.
