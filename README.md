@@ -41,8 +41,7 @@
 - [16. Optional Port Knocking with `knockd`](#16-optional-port-knocking-with-knockd)
 - [17. Operational Best Practices](#17-operational-best-practices)
 - [18. Troubleshooting](#18-troubleshooting)
-- [19. Final Checklist](#19-final-checklist)
-- [20. Official References](#20-official-references)
+- [19. Official References](#19-official-references)
 
 ---
 
@@ -870,37 +869,10 @@ sudo journalctl -u fail2ban -n 100 --no-pager
 
 ---
 
-## 19. Final Checklist
-
-- [ ] Tailscale is installed on all devices.
-- [ ] All devices are authenticated into the same tailnet.
-- [ ] `tailscale status` shows active devices.
-- [ ] `tailscale ip -4` returns a `100.x.y.z` address.
-- [ ] MagicDNS is enabled.
-- [ ] SSH works through the Tailscale IP.
-- [ ] SSH works through MagicDNS.
-- [ ] An Ed25519 SSH key has been created.
-- [ ] The SSH key has been copied to the server.
-- [ ] Key-based login has been tested from a second terminal.
-- [ ] `PasswordAuthentication no` is configured.
-- [ ] `KbdInteractiveAuthentication no` is configured.
-- [ ] `PermitRootLogin no` is configured.
-- [ ] SSH configuration has been validated with `sudo sshd -t`.
-- [ ] SSH has been restarted successfully.
-- [ ] Ordered firewall rules, Tailscale netfilter chains and provider IPv4/IPv6 rules were reviewed.
-- [ ] Public TCP/22 was tested from outside the tailnet, and a new SSH connection over Tailscale succeeded.
-- [ ] Independent recovery access and verified configuration backups are available.
-- [ ] Public SSH is blocked unless strictly required.
-- [ ] Fail2ban is installed and running.
-- [ ] The `sshd` jail is active.
-- [ ] A Subnet Router is configured only if LAN access is required.
-- [ ] An Exit Node is configured only if Internet routing is required.
-- [ ] Port knocking is configured only if it is truly needed.
-- [ ] Old or unused devices have been revoked from the tailnet.
 
 ---
 
-## 20. Official References
+## 19. Official References
 
 - [Tailscale: Install on Linux](https://tailscale.com/docs/install/linux)
 - [Tailscale: Download and install](https://tailscale.com/docs/install)
@@ -909,14 +881,13 @@ sudo journalctl -u fail2ban -n 100 --no-pager
 - [Tailscale: Subnet Routers](https://tailscale.com/docs/features/subnet-routers)
 - [Tailscale: Exit Nodes](https://tailscale.com/docs/features/exit-nodes)
 - [Tailscale: Access Controls](https://tailscale.com/docs/features/access-control/acls)
-- [OpenSSH: sshd_config manual](https://man.openbsd.org/sshd_config)
-- [Fail2ban: Official project](https://github.com/fail2ban/fail2ban)
-- [Ubuntu manpage: knockd](https://manpages.ubuntu.com/manpages/focal/man1/knockd.1.html)
-
-- [OpenSSH: ssh_config](https://man.openbsd.org/ssh_config)
-- [OpenSSH: sshd](https://man.openbsd.org/sshd.8)
-- [UFW: manual](https://manpages.ubuntu.com/manpages/noble/man8/ufw.8.html)
 - [Tailscale: Grants](https://tailscale.com/docs/reference/syntax/grants)
 - [Tailscale: Netfilter modes](https://tailscale.com/docs/reference/netfilter-modes)
+- [OpenSSH: ssh_config](https://man.openbsd.org/ssh_config)
+- [OpenSSH: sshd_config](https://man.openbsd.org/sshd_config)
+- [OpenSSH: sshd](https://man.openbsd.org/sshd.8)
+- [UFW: manual](https://manpages.ubuntu.com/manpages/noble/man8/ufw.8.html)
+- [Fail2ban: Official project](https://github.com/fail2ban/fail2ban)
+- [Ubuntu manpage: knockd](https://manpages.ubuntu.com/manpages/focal/man1/knockd.1.html)
 
 ---

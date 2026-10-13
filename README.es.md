@@ -42,8 +42,7 @@
 - [16. Port knocking con `knockd`](#16-port-knocking-con-knockd)
 - [17. Buenas prácticas operativas](#17-buenas-prácticas-operativas)
 - [18. Troubleshooting](#18-troubleshooting)
-- [19. Checklist final](#19-checklist-final)
-- [20. Referencias oficiales](#20-referencias-oficiales)
+- [19. Referencias oficiales](#19-referencias-oficiales)
 
 ---
 
@@ -858,54 +857,25 @@ sudo journalctl -u fail2ban -n 100 --no-pager
 
 ---
 
-## 19. Checklist final
-
-- [ ] Tailscale instalado en todos los dispositivos.
-- [ ] Todos los dispositivos autenticados en el mismo tailnet.
-- [ ] `tailscale status` muestra los equipos activos.
-- [ ] `tailscale ip -4` devuelve una IP `100.x.y.z`.
-- [ ] MagicDNS activado.
-- [ ] SSH probado por IP de Tailscale.
-- [ ] SSH probado por MagicDNS.
-- [ ] Llave SSH Ed25519 creada.
-- [ ] Llave copiada al servidor.
-- [ ] Acceso por llave probado en una segunda terminal.
-- [ ] `PasswordAuthentication no` configurado.
-- [ ] `KbdInteractiveAuthentication no` configurado.
-- [ ] `PermitRootLogin no` configurado.
-- [ ] Configuración validada con `sudo sshd -t`.
-- [ ] SSH reiniciado correctamente.
-- [ ] Revisé las reglas ordenadas del firewall, las cadenas netfilter de Tailscale y las reglas IPv4/IPv6 del proveedor.
-- [ ] Probé TCP/22 público desde fuera del tailnet y funcionó una conexión SSH nueva por Tailscale.
-- [ ] Tengo recuperación independiente y respaldos de configuración verificados.
-- [ ] SSH público bloqueado si no es necesario.
-- [ ] Fail2ban instalado y activo.
-- [ ] Jail `sshd` funcionando.
-- [ ] Subnet Router configurado solo si se necesita acceder a una LAN.
-- [ ] Exit Node configurado solo si se necesita enrutar Internet.
-- [ ] Port knocking configurado solo si aplica.
-- [ ] Dispositivos antiguos o no usados revocados del tailnet.
 
 ---
 
-## 20. Referencias oficiales
+## 19. Referencias oficiales
 
 - [Tailscale: instalación en Linux](https://tailscale.com/docs/install/linux)
+- [Tailscale: descargar e instalar](https://tailscale.com/docs/install)
 - [Tailscale: MagicDNS](https://tailscale.com/docs/features/magicdns)
 - [Tailscale: Tailscale SSH](https://tailscale.com/docs/features/tailscale-ssh)
 - [Tailscale: Subnet routers](https://tailscale.com/docs/subnets)
 - [Tailscale: Exit nodes](https://tailscale.com/docs/features/exit-nodes)
 - [Tailscale: Access controls](https://tailscale.com/kb/1018/acls)
+- [Tailscale: Grants](https://tailscale.com/docs/reference/syntax/grants)
+- [Tailscale: Netfilter modes](https://tailscale.com/docs/reference/netfilter-modes)
+- [OpenSSH: ssh_config](https://man.openbsd.org/ssh_config)
 - [OpenSSH: sshd_config](https://man.openbsd.org/sshd_config)
+- [OpenSSH: sshd](https://man.openbsd.org/sshd.8)
+- [UFW: manual](https://manpages.ubuntu.com/manpages/noble/man8/ufw.8.html)
 - [Fail2ban: proyecto oficial](https://github.com/fail2ban/fail2ban)
 - [Ubuntu manpage: knockd](https://manpages.ubuntu.com/manpages/focal/man1/knockd.1.html)
 
-- [OpenSSH: ssh_config](https://man.openbsd.org/ssh_config)
-- [OpenSSH: sshd](https://man.openbsd.org/sshd.8)
-- [UFW: manual](https://manpages.ubuntu.com/manpages/noble/man8/ufw.8.html)
-- [Tailscale: Grants](https://tailscale.com/docs/reference/syntax/grants)
-- [Tailscale: Netfilter modes](https://tailscale.com/docs/reference/netfilter-modes)
-
 ---
-
-
