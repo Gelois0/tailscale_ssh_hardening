@@ -32,7 +32,7 @@
   - [10.2 Copy the Key to the Server](#102-copy-the-key-to-the-server)
   - [10.3 Test Key-Based Login](#103-test-key-based-login)
   - [10.4 Disable Password-Based Login](#104-disable-password-based-login)
-  - [10.5 Validate and Restart SSH](#105-validate-and-restart-ssh)
+  - [10.5 Back Up, Validate, and Apply SSH Changes](#105-back-up-validate-and-apply-ssh-changes)
 - [11. Restrict SSH to Tailscale with a Firewall](#11-restrict-ssh-to-tailscale-with-a-firewall)
 - [12. Add Fail2ban as an Extra Layer](#12-add-fail2ban-as-an-extra-layer)
 - [13. Access Controls: Grants and ACLs](#13-access-controls-grants-and-acls)
@@ -236,27 +236,23 @@ Common use cases:
 
 ### 4.6 Tailscale SSH
 
-**Tailscale SSH** lets Tailscale manage SSH access based on tailnet identity and access policies.
+Tailscale SSH and OpenSSH over Tailscale are distinct access modes. When enabled, Tailscale SSH handles port 22 traffic arriving at the device's Tailscale address instead of the system OpenSSH server. OpenSSH settings such as `authorized_keys` and `PasswordAuthentication`, and the OpenSSH Fail2ban jail, do not automatically control Tailscale SSH. Public exposure of OpenSSH remains a separate issue to assess.
 
-It is not mandatory. You can either:
+Tailscale SSH requires both network access and an `ssh` rule in the tailnet policy, including the permitted destination users. Review and test the policy before enabling it.
 
-- Use traditional OpenSSH with SSH keys.
-- Use Tailscale SSH for policy-managed SSH access inside the tailnet.
-
-Enable Tailscale SSH on a destination machine:
+Enable Tailscale SSH:
 
 ```bash
 sudo tailscale set --ssh
 ```
 
-Disable Tailscale SSH:
+Disable it:
 
 ```bash
 sudo tailscale set --ssh=false
 ```
 
-> [!NOTE]
-> If you prefer a universal and distribution-neutral setup, use OpenSSH with SSH keys and restrict access to the Tailscale interface.
+If you prefer traditional key-based OpenSSH, keep Tailscale SSH disabled and restrict OpenSSH using a reviewed firewall policy. Section 10 applies to OpenSSH, not automatically to Tailscale SSH.
 
 ---
 
@@ -309,6 +305,9 @@ sudo tailscale up
 ```
 
 If the device was already authenticated and you need to force re-authentication:
+
+> [!WARNING]
+> Before forcing reauthentication, confirm another authenticated administration path or independent provider-console access. `--force-reauth` may interrupt access when Tailscale is your only route; it is not a routine fix after `tailscale status`.
 
 ```bash
 sudo tailscale up --force-reauth
@@ -430,26 +429,33 @@ ssh-copy-id user@vps-server
 
 ### 10.3 Test Key-Based Login
 
-Before disabling password authentication, open a new terminal and test login with the key:
+Test a **new OpenSSH connection** before disabling password login. Replace the example address, user, and key path. Disable password and keyboard-interactive fallback and avoid connection multiplexing; keep server host-key verification enabled:
 
 ```bash
-ssh user@100.87.13.44
+ssh -v -o ControlMaster=no -o ControlPath=none \
+  -o PreferredAuthentications=publickey \
+  -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no \
+  -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 user@100.87.13.44
 ```
 
+Confirm the verbose output reports successful `publickey` authentication. A private-key passphrase prompt is not the server account password. If using unattended authentication, add `-o BatchMode=yes` with an already usable key/agent; an encrypted key without an agent may fail in batch mode.
+
 > [!IMPORTANT]
-> Do not close your existing SSH session until you have confirmed that a new session works with the SSH key.
+> Keep the existing session open until a new connection succeeds. A connection handled by Tailscale SSH does not prove OpenSSH key authentication works.
 
 ---
 
 ### 10.4 Disable Password-Based Login
 
-Edit the SSH daemon configuration:
+Before editing, follow the backup and recovery prerequisites in section 10.5. Inspect `/etc/ssh/sshd_config` and its actual `Include` order, including files under `/etc/ssh/sshd_config.d/`. OpenSSH generally uses the first value obtained for each option: a late-named file does not necessarily override an earlier setting. Account for applicable `Match` blocks; do not blindly append duplicate settings.
+
+Edit only the configuration files that control the intended connection:
 
 ```bash
 sudo nano /etc/ssh/sshd_config
 ```
 
-Ensure these values are set:
+Intended values for key-only OpenSSH:
 
 ```sshconfig
 PubkeyAuthentication yes
@@ -458,89 +464,60 @@ KbdInteractiveAuthentication no
 PermitRootLogin no
 ```
 
-Recommended extra hardening:
+Optional, if X11 forwarding is not needed:
 
 ```sshconfig
 X11Forwarding no
 ```
 
-> [!NOTE]
-> Some cloud images or distributions place overrides inside `/etc/ssh/sshd_config.d/`. If password authentication still appears enabled after editing `sshd_config`, inspect that directory as well.
-
-Check the effective SSH configuration:
-
-```bash
-sudo sshd -T | grep -E 'passwordauthentication|kbdinteractiveauthentication|permitrootlogin|pubkeyauthentication'
-```
-
----
-
-### 10.5 Validate and Restart SSH
-
-Validate the configuration before restarting:
+Check syntax and effective values:
 
 ```bash
 sudo sshd -t
+sudo sshd -T | grep -E '^(passwordauthentication|kbdinteractiveauthentication|permitrootlogin|pubkeyauthentication) '
 ```
 
-If no errors are shown, restart SSH.
+For `Match` rules, use `sshd -T -C` with the actual user, source address, and host for the connection being tested. Syntax and effective-configuration checks do not prove remote access works; test a new connection after applying the change.
 
-On Debian/Ubuntu:
+---
 
-```bash
-sudo systemctl restart ssh
-```
+### 10.5 Back Up, Validate, and Apply SSH Changes
 
-On RHEL, Fedora, Arch, and many other distributions:
+1. Confirm independent recovery access, such as the provider console, and keep the existing SSH session open. Do not proceed if the SSH path being changed is the only recovery path.
+2. Before editing, back up every file you will change, including included configuration files, and record the exact original and backup paths. Verify the backups are readable and match the originals. Record how to restore them from the independent console.
+3. Verify a new key-only OpenSSH connection using section 10.3. After editing, validate syntax with `sudo sshd -t` and inspect effective values using section 10.4. Abort on errors or unexpected values.
+4. Apply changes using the actual service name and the distribution's supported reload procedure. Debian/Ubuntu commonly use `sudo systemctl reload ssh`; other distributions may use `sudo systemctl reload sshd`. If reload is unsupported, plan the restart and recovery before executing it. Do not run both service commands blindly.
+5. Check the actual service status, then open a **new** SSH connection and confirm the intended authentication method. Close the old session only after the new connection succeeds.
 
-```bash
-sudo systemctl restart sshd
-```
-
-Check service status:
-
-```bash
-systemctl status ssh
-```
-
-Or:
-
-```bash
-systemctl status sshd
-```
+If the new connection fails, use the retained session or independent console to restore only the changed files from the recorded backups, run `sshd -t`, and reload/restart the correct service. Retest a fresh connection before closing recovery access. A valid configuration or active service alone is not proof of successful remote login.
 
 ---
 
 ## 11. Restrict SSH to Tailscale with a Firewall
 
-If you use UFW, allow SSH only through the `tailscale0` interface.
+This is a planning example, not a universal command sequence. Identify the active firewall backend, inspect the complete ordered ruleset and IPv6 configuration, and review the provider firewall for both address families.
 
-Allow SSH from Tailscale:
+UFW uses first-match ordering within its rules: an earlier broad allow can permit public SSH despite a later `deny 22/tcp`. UFW's before/after rules and Tailscale's netfilter chains also matter; `ufw status` alone is not the complete effective policy.
 
-```bash
-sudo ufw allow in on tailscale0 to any port 22 proto tcp
-```
+Before changing a remote firewall:
 
-Deny public SSH:
+- Verify independent console recovery and keep a working session open.
+- Establish a second working SSH connection over Tailscale.
+- Back up and verify the exact firewall configuration being changed; record restoration steps and whether UFW was active.
+- Inspect `sudo ufw status numbered`, `sudo ufw show raw`, and the active iptables/nftables rules as applicable.
+- Review the provider rules, including IPv6. Remove or narrow only identified conflicting allows; do not use `ufw reset` as a shortcut.
 
-```bash
-sudo ufw deny 22/tcp
-```
-
-Enable UFW if it is not already enabled:
+For a reviewed UFW user ruleset, the intended order is an allow on `tailscale0`, followed by a deny of other TCP/22 traffic before broader incoming allows. Adapt to existing rules and avoid duplicates. Example only:
 
 ```bash
-sudo ufw enable
-```
-
-Show numbered firewall rules:
-
-```bash
+sudo ufw insert 1 allow in on tailscale0 to any port 22 proto tcp
+sudo ufw insert 2 deny 22/tcp
 sudo ufw status numbered
 ```
 
-> [!WARNING]
-> Before changing firewall rules on a remote server, keep an existing SSH session open and test a second connection through Tailscale.
+Enable UFW only after reviewing its impact on all services. When IPv6 is present, verify that IPv6 filtering is enabled and the effective rules cover it. Tailscale installs netfilter rules of its own, so do not assume UFW controls every tailnet packet.
+
+From outside the tailnet, test that public TCP/22 is blocked on each public IPv4/IPv6 address. Separately test a **new** SSH connection over Tailscale. Preserve provider-console recovery. If either test fails, stop and restore the recorded configuration through the recovery path; do not close the working session.
 
 ---
 
@@ -623,6 +600,8 @@ Conceptual grants example:
 ```
 
 > [!NOTE]
+> This is a conceptual policy fragment. Define `group:admins` and the owners of `tag:servers`. Grants are additive: permissions from matching grants combine, and a narrow grant does not override an existing broad grant. Review the complete policy. Tailscale SSH additionally requires a separate `ssh` rule. Test intended allowed and denied connections.
+>
 > Routes define where traffic can go. Access controls define whether that traffic is allowed.
 
 ---
@@ -757,18 +736,9 @@ sudo nano /etc/knockd.conf
 
 Basic example using UFW:
 
-```ini
-[options]
-UseSyslog
+> [!WARNING]
+> The generic UFW/knockd example is omitted: an appended allow may remain below an SSH deny, and deleting a matching allow can affect a pre-existing rule. A host-specific integration must insert a narrow temporary exception before the deny and remove only the exact rule it created. Verify ordering, interface, duplicate rules, IPv4/IPv6 and recovery in a controlled environment. Until then, keep knockd disabled; do not use the restart/client commands below as a deployment sequence.
 
-[openSSH]
-sequence = 7000,8000,9000
-seq_timeout = 15
-tcpflags = syn
-command = /usr/sbin/ufw allow from %IP% to any port 22 proto tcp
-cmd_timeout = 30
-stop_command = /usr/sbin/ufw delete allow from %IP% to any port 22 proto tcp
-```
 
 Restart knockd:
 
@@ -816,6 +786,9 @@ tailscale status
 ```
 
 Force re-authentication:
+
+> [!WARNING]
+> Before forcing reauthentication, confirm another authenticated administration path or independent provider-console access. `--force-reauth` may interrupt access when Tailscale is your only route; it is not a routine fix after `tailscale status`.
 
 ```bash
 sudo tailscale up --force-reauth
@@ -914,7 +887,9 @@ sudo journalctl -u fail2ban -n 100 --no-pager
 - [ ] `PermitRootLogin no` is configured.
 - [ ] SSH configuration has been validated with `sudo sshd -t`.
 - [ ] SSH has been restarted successfully.
-- [ ] The firewall allows SSH through `tailscale0`.
+- [ ] Ordered firewall rules, Tailscale netfilter chains and provider IPv4/IPv6 rules were reviewed.
+- [ ] Public TCP/22 was tested from outside the tailnet, and a new SSH connection over Tailscale succeeded.
+- [ ] Independent recovery access and verified configuration backups are available.
 - [ ] Public SSH is blocked unless strictly required.
 - [ ] Fail2ban is installed and running.
 - [ ] The `sshd` jail is active.
@@ -937,5 +912,11 @@ sudo journalctl -u fail2ban -n 100 --no-pager
 - [OpenSSH: sshd_config manual](https://man.openbsd.org/sshd_config)
 - [Fail2ban: Official project](https://github.com/fail2ban/fail2ban)
 - [Ubuntu manpage: knockd](https://manpages.ubuntu.com/manpages/focal/man1/knockd.1.html)
+
+- [OpenSSH: ssh_config](https://man.openbsd.org/ssh_config)
+- [OpenSSH: sshd](https://man.openbsd.org/sshd.8)
+- [UFW: manual](https://manpages.ubuntu.com/manpages/noble/man8/ufw.8.html)
+- [Tailscale: Grants](https://tailscale.com/docs/reference/syntax/grants)
+- [Tailscale: Netfilter modes](https://tailscale.com/docs/reference/netfilter-modes)
 
 ---
